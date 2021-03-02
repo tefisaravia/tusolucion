@@ -182,7 +182,7 @@
 			li.remove();
 
 			// update attachment ids
-			gallery_ids.val( $.uniqueSort( attachment_ids ).join( ',' ) );
+			gallery_ids.val( _.uniq( attachment_ids ).join( ',' ) );
 
 			return false;
 		} );
@@ -344,7 +344,7 @@
 					}
 				}
 
-				gallery_ids.val( $.uniqueSort( copy ).join( ',' ) );
+				gallery_ids.val( _.uniq( copy ).join( ',' ) );
 			} );
 
 			// open media frame
@@ -691,7 +691,7 @@
 						attachment_ids.push( parseInt( $( this ).attr( 'data-attachment_id' ) ) );
 					} );
 
-					ids.val( $.uniqueSort( attachment_ids ).join( ',' ) );
+					ids.val( _.uniq( attachment_ids ).join( ',' ) );
 				}
 			} );
 		}

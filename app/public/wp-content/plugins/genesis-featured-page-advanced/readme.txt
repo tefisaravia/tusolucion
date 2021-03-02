@@ -3,8 +3,8 @@ Contributors: ndiego, outermostdesign
 Donate Link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=WLSEBKWPL9UMN
 Tags: featured page, genesis, widget, featured content, Genesis Framework, genesiswp, page, widget-only, widgets
 Requires at least: 3.6
-Tested up to: 5.5
-Stable tag: 1.9.7
+Tested up to: 5.6
+Stable tag: 1.9.8
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -19,7 +19,7 @@ That said, most Genesis users have probably stumbled upon the *Genesis - Feature
 However, sometimes you need additional functionality that is not offered in the core widget, such as adding a custom image or custom content. This is what *Genesis - Featured Page Advanced* does.
 
 = Plugin Highlights =
-* **New:** You can now add a Custom Page Title
+* Add a Custom Page Title
 * Display widget title above or below image (Defaults above)
 * Display page title above or below image (Defaults below)
 * Adds option for widget to link to a custom link
@@ -62,6 +62,9 @@ There are a few ways you can help support the development of this plugin:
 1. Admin and frontend view of the Genesis - Featured Page Advanced widget. Highlights normal usage and advanced usage.
 
 == Changelog ==
+
+= 1.9.8 - 2021/2/24 =
+* Fixed issue where the media button would not work in Beaver Builder (Thanks @geea!)
 
 = 1.9.7 - 2019/6/19 =
 * Fixed conflict with Genesis 3.0 which caused the widget not to register (Thanks katebrianna!)

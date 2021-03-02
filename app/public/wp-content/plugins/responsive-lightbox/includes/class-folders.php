@@ -11,7 +11,10 @@ if ( ! defined( 'ABSPATH' ) )
 class Responsive_Lightbox_Folders {
 
     private $mode = '';
-	private $term_counters = array();
+	private $term_counters = array(
+		'keys'		=> array(),
+		'values'	=> array()
+	);
 
     /**
      * Class constructor.
@@ -1031,8 +1034,12 @@ class Responsive_Lightbox_Folders {
 				if ( $term_id > 0 )
 					$html = preg_replace_callback( '/class="cat-item cat-item-(\d+)(?:[a-z\s0-9-]+)?"/', array( $this, 'open_folders' ), $html );
 
-				// update folder counters
-				$counters = array_combine( $this->term_counters['keys'], $this->term_counters['values'] );
+				// check whether counters are valid
+				if ( ! ( empty( $this->term_counters['keys'] ) || empty( $this->term_counters['values'] ) || count( $this->term_counters['keys'] ) !== count( $this->term_counters['values'] ) ) ) {
+//@TODO counters are supposed to be used in JS but not implemented yet
+					// update folder counters
+					$counters = array_combine( $this->term_counters['keys'], $this->term_counters['values'] );
+				}
 			}
 
 			// root folder query

@@ -346,7 +346,8 @@ class Responsive_Lightbox_Settings {
 						'title' => __( 'Delete data', 'responsive-lightbox' ),
 						'section' => 'responsive_lightbox_settings',
 						'type' => 'boolean',
-						'label' => __( 'Delete all plugin settings on deactivation.', 'responsive-lightbox' )
+						'label' => __( 'Delete all plugin settings on deactivation.', 'responsive-lightbox' ),
+						'description' => __( 'Enable this to delete all plugin settings and also delete all plugin capabilities from all users on deactivation.', 'responsive-lightbox' )
 					)
 				)
 			),
@@ -493,7 +494,7 @@ class Responsive_Lightbox_Settings {
 					)
 				),
 				'prefix'		=> 'rl',
-				'fields' => array(
+				'fields'		=> array(
 					'active' => array(
 						'title' => __( 'Remote Library', 'responsive-lightbox' ),
 						'section' => 'responsive_lightbox_remote_library',
@@ -526,21 +527,31 @@ class Responsive_Lightbox_Settings {
 					),
 				),
 				'prefix'		=> 'rl',
-				'fields' => array(
-				)
+				'fields'		=> array()
 			),
 			'capabilities' => array(
 				'option_group'	=> 'responsive_lightbox_capabilities',
 				'option_name'	=> 'responsive_lightbox_capabilities',
-				'callback' => array( $this, 'validate_capabilities' ),
+				'callback'		=> array( $this, 'validate_capabilities' ),
 				'sections'		=> array(
-					'responsive_lightbox_capabilities' => array(
+					'responsive_lightbox_capabilities_fields' => array(
 						'title' => __( 'Capabilities Settings', 'responsive-lightbox' ),
+						'page' => 'responsive_lightbox_capabilities'
+					),
+					'responsive_lightbox_capabilities' => array(
 						'callback' => array( $this, 'capabilities_table' )
 					)
 				),
 				'prefix'		=> 'rl',
-				'fields' => array()
+				'fields'		=> array(
+					'active' => array(
+						'title' => __( 'Capabilities', 'responsive-lightbox' ),
+						'section' => 'responsive_lightbox_capabilities_fields',
+						'type' => 'boolean',
+						'label' => __( 'Enable advanced capability management.', 'responsive-lightbox' ),
+						'description' => __( 'Check this to enable access to plugin features for selected user roles.', 'responsive-lightbox' )
+					)
+				)
 			),
 			'basicgrid_gallery' => array(
 				'option_group' => 'responsive_lightbox_basicgrid_gallery',
@@ -1824,7 +1835,7 @@ class Responsive_Lightbox_Settings {
 	 */
 	public function admin_menu_options() {
 		// get master capability
-		$capability = apply_filters( 'rl_lightbox_settings_capability', 'edit_lightbox_settings' );
+		$capability = apply_filters( 'rl_lightbox_settings_capability', Responsive_Lightbox()->options['capabilities']['active'] ? 'edit_lightbox_settings' : 'manage_options' );
 
 		add_menu_page( __( 'General', 'responsive-lightbox' ), __( 'Lightbox', 'responsive-lightbox' ), $capability, 'responsive-lightbox-settings', '', 'dashicons-format-image', '57.1' );
 
@@ -1846,6 +1857,17 @@ class Responsive_Lightbox_Settings {
 		$tab_key = isset( $tabs[1] ) ? $tabs[1] : 'settings';
 		$section_key = isset( $_GET['section'] ) ? esc_attr( $_GET['section'] ) : ( ! empty( $this->tabs[$tab_key]['default_section'] ) ? $this->tabs[$tab_key]['default_section'] : '' );
 
+		// assign main instance
+		$rl = Responsive_Lightbox();
+
+		// no valid lightbox script?
+		if ( $tab_key === 'configuration' && ! array_key_exists( $section_key, $rl->options['configuration'] ) )
+			return;
+
+		// no valid gallery?
+		if ( $tab_key === 'gallery' && ! array_key_exists( $section_key, $rl->settings->tabs['gallery']['sections'] ) )
+			return;
+
 		echo '
 		<div class="wrap">';
 
@@ -1866,7 +1888,7 @@ class Responsive_Lightbox_Settings {
 			<div class="responsive-lightbox-settings">
 			
 				<div class="df-credits">
-					<h3 class="hndle">' . __( 'Responsive Lightbox & Gallery', 'responsive-lightbox' ) . ' ' . Responsive_Lightbox()->defaults['version'] . '</h3>
+					<h3 class="hndle">' . __( 'Responsive Lightbox & Gallery', 'responsive-lightbox' ) . ' ' . $rl->defaults['version'] . '</h3>
 					<div class="inside">
 						<h4 class="inner">' . __( 'Need support?', 'responsive-lightbox' ) . '</h4>
 						<p class="inner">' . sprintf( __( 'If you are having problems with this plugin, please browse it\'s <a href="%s" target="_blank">Documentation</a> or talk about them in the <a href="%s" target="_blank">Support forum</a>', 'responsive-lightbox' ), 'https://www.dfactory.eu/docs/responsive-lightbox/?utm_source=responsive-lightbox-settings&utm_medium=link&utm_campaign=docs', 'https://www.dfactory.eu/support/?utm_source=responsive-lightbox-settings&utm_medium=link&utm_campaign=support' ) . '</p>
@@ -1936,7 +1958,7 @@ class Responsive_Lightbox_Settings {
 	 * @return string
 	 */
 	public function manage_options_capability() {
-		return 'edit_lightbox_settings';
+		return Responsive_Lightbox()->options['capabilities']['active'] ? 'edit_lightbox_settings' : 'manage_options';
 	}
 
 	/**
@@ -2231,8 +2253,11 @@ class Responsive_Lightbox_Settings {
 	 * @return array
 	 */
 	public function validate_settings( $input ) {
+		// assign main instance
+		$rl = Responsive_Lightbox();
+
 		// check capability
-		if ( ! current_user_can( apply_filters( 'rl_lightbox_settings_capability', 'edit_lightbox_settings' ) ) )
+		if ( ! current_user_can( apply_filters( 'rl_lightbox_settings_capability', $rl->options['capabilities']['active'] ? 'edit_lightbox_settings' : 'manage_options' ) ) )
 			return $input;
 
 		// check page
@@ -2252,9 +2277,6 @@ class Responsive_Lightbox_Settings {
 		// check setting id
 		if ( ! $setting_id )
 			return $input;
-
-		// assign main instance
-		$rl = Responsive_Lightbox();
 
 		// save settings
 		if ( isset( $_POST['save' . '_' . $this->settings[$setting_id]['prefix']  . '_' . $setting_id] ) ) {
@@ -2329,14 +2351,17 @@ class Responsive_Lightbox_Settings {
 	 * @return array
 	 */
 	public function validate_capabilities( $input ) {
-		// check capability
-		if ( ! current_user_can( apply_filters( 'rl_lightbox_settings_capability', 'edit_lightbox_settings' ) ) )
-			return $input;
-
-		global $wp_roles;
-
 		// assign main instance
 		$rl = Responsive_Lightbox();
+
+		// check capability
+		if ( ! current_user_can( apply_filters( 'rl_lightbox_settings_capability', $rl->options['capabilities']['active'] ? 'edit_lightbox_settings' : 'manage_options' ) ) )
+			return $input;
+
+		// validate normal fields
+		$input = $this->validate_settings( $input );
+
+		global $wp_roles;
 
 		// save capabilities?
 		if ( isset( $_POST['save_rl_capabilities'] ) ) {
@@ -2347,7 +2372,7 @@ class Responsive_Lightbox_Settings {
 				// manage new capabilities only for non-admins
 				if ( $role_name !== 'administrator' ) {
 					foreach ( $rl->capabilities as $capability => $label ) {
-						if ( isset( $input[$role_name][$capability] ) && $input[$role_name][$capability] === 'true' )
+						if ( isset( $input['roles'][$role_name][$capability] ) && $input['roles'][$role_name][$capability] === 'true' )
 							$role->add_cap( $capability );
 						else
 							$role->remove_cap( $capability );
@@ -2361,7 +2386,7 @@ class Responsive_Lightbox_Settings {
 				$role = $wp_roles->get_role( $role_name );
 
 				foreach ( $rl->capabilities as $capability => $label ) {
-					if ( in_array( $capability, $rl->defaults['capabilities'][$role_name], true ) )
+					if ( array_key_exists( $role_name, $rl->defaults['capabilities']['roles'] ) && in_array( $capability, $rl->defaults['capabilities']['roles'][$role_name], true ) )
 						$role->add_cap( $capability );
 					else
 						$role->remove_cap( $capability );
@@ -2370,6 +2395,8 @@ class Responsive_Lightbox_Settings {
 
 			add_settings_error( 'reset_rl_capabilities', 'settings_restored', __( 'Settings restored to defaults.', 'responsive-lightbox' ), 'updated' );
 		}
+
+		return $input;
 	}
 
 	/**
@@ -2384,7 +2411,6 @@ class Responsive_Lightbox_Settings {
 		$editable_roles = get_editable_roles();
 
 		$html = '
-		<p class="description">' . esc_html__( 'Enable access to plugin features for selected user roles.', 'responsive-lightbox' ) . '</p>
 		<br class="clear" />
 		<table class="widefat fixed posts">
 			<thead>
@@ -2413,7 +2439,7 @@ class Responsive_Lightbox_Settings {
 
 				$html .= '
 					<td>
-						<input type="checkbox" name="responsive_lightbox_capabilities[' . esc_attr( $role->name ) . '][' . esc_attr( $cap_role ) . ']" value="true" ' . checked( true, $role->has_cap( $cap_role ), false ) . ' ' . disabled( $role_name, 'administrator', false ) . ' />
+						<input type="checkbox" name="responsive_lightbox_capabilities[roles][' . esc_attr( $role->name ) . '][' . esc_attr( $cap_role ) . ']" value="true" ' . checked( true, ( $role->has_cap( $cap_role ) || $role_name === 'administrator' ), false ) . ' ' . disabled( $role_name, 'administrator', false ) . ' />
 					</td>';
 			}
 
@@ -2493,7 +2519,7 @@ class Responsive_Lightbox_Settings {
 	 */
 	public function validate_licenses( $input ) {
 		// check cap
-		if ( ! current_user_can( apply_filters( 'rl_lightbox_settings_capability', 'edit_lightbox_settings' ) ) )
+		if ( ! current_user_can( apply_filters( 'rl_lightbox_settings_capability', Responsive_Lightbox()->options['capabilities']['active'] ? 'edit_lightbox_settings' : 'manage_options' ) ) )
 			return $input;
 
 		// check page
@@ -2501,9 +2527,10 @@ class Responsive_Lightbox_Settings {
 			return $input;
 
 		// check data
-		if ( ! isset( $_POST['responsive_lightbox_licenses'] ) || ! is_array( $_POST['responsive_lightbox_licenses']  ))
+		if ( ! isset( $_POST['responsive_lightbox_licenses'] ) || ! is_array( $_POST['responsive_lightbox_licenses'] ) )
 			return $input;
 
+		// get extension licenses
 		$extensions = apply_filters( 'rl_settings_licenses', array() );
 
 		if ( empty( $extensions ) )

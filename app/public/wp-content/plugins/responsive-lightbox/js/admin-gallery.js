@@ -192,7 +192,7 @@
 			var shortcode = '[rl_gallery id="' + this.lastGalleryID + '"]';
 				editor = tinyMCE.get( 'content' );
 
-			if ( editor )
+			if ( editor && ! editor.isHidden() )
 				editor.execCommand( 'mceInsertContent', false, shortcode );
 			else
 				wp.media.editor.insert( shortcode );

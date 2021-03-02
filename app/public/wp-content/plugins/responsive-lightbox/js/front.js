@@ -2,16 +2,16 @@
 
 	// parse query string
 	var parse_str = function( name, str ) {
-		var regex = new RegExp( '[?&]' + name.replace( /[\[\]]/g, '\\$&' ) + '(=([^&#]*)|&|#|$)' ),
-			results = regex.exec( '&' + str );
+		var regex = new RegExp( '[?&]' + name.replace( /[\[\]]/g, '\\$&' ) + '(=([^&#]*)|&|#|$)' );
+		var results = regex.exec( '&' + str );
 
 		return ( ! results || ! results[2] ? '' : decodeURIComponent( results[2].replace( /\+/g, ' ' ) ) );
 	}
 
 	// observe DOM changes
 	var observe_script_dom = ( function() {
-		var MutationObserver = window.MutationObserver || window.WebKitMutationObserver,
-			eventListenerSupported = window.addEventListener;
+		var MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
+		var eventListenerSupported = window.addEventListener;
 
 		return function( obj, only_added, callback ) {
 			if ( MutationObserver ) {
@@ -31,9 +31,8 @@
 			} else if ( eventListenerSupported ) {
 				obj.addEventListener( 'DOMNodeInserted', callback, false );
 
-				if ( !only_added ) {
+				if ( !only_added )
 					obj.addEventListener( 'DOMNodeRemoved', callback, false );
-				}
 			}
 		}
 	} )();
@@ -56,22 +55,21 @@
 			var container = $( this );
 
 			// is it ifinite scroll gallery?
-			if ( container.hasClass( 'rl-pagination-infinite' ) ) {
+			if ( container.hasClass( 'rl-pagination-infinite' ) )
 				containers.push( container );
-			} else {
-				// remove loading class
+			// remove loading class
+			else
 				container.removeClass( 'rl-loading' );
-			}
 		} );
 
 		// any infinite galleries?
 		if ( containers.length > 0 ) {
 			for ( var i = 0; i < containers.length; i++ ) {
-				var container = containers[i],
-					gallery = container.find( '.rl-gallery' ),
-					gallery_id = parseInt( container.data( 'gallery_id' ) ),
-					gallery_scroll_type = container.find( '.rl-pagination-bottom' ).data( 'button' ),
-					gallery_button = typeof gallery_scroll_type !== 'undefined' && gallery_scroll_type === 'manually';
+				var container = containers[i];
+				var gallery = container.find( '.rl-gallery' );
+				var gallery_id = parseInt( container.data( 'gallery_id' ) );
+				var gallery_scroll_type = container.find( '.rl-pagination-bottom' ).data( 'button' );
+				var gallery_button = typeof gallery_scroll_type !== 'undefined' && gallery_scroll_type === 'manually';
 
 				// initialize infinite scroll
 				gallery.infiniteScroll( {
@@ -137,8 +135,8 @@
 
 	// pagination
 	$( document ).on( 'click', '.rl-pagination a.page-numbers', function( e ) {
-		var link = $( this ),
-			container = link.closest( '.rl-gallery-container' );
+		var link = $( this );
+		var container = link.closest( '.rl-gallery-container' );
 
 		// ajax type pagination?
 		if ( container.hasClass( 'rl-pagination-ajax' ) ) {
@@ -178,17 +176,15 @@
 
 	// this is similar to the WP function add_action();
 	$( document ).on( 'doResponsiveLightbox', function( event ) {
-		if ( typeof event.masonry !== 'undefined' && event.masonry === true ) {
+		if ( typeof event.masonry !== 'undefined' && event.masonry === true )
 			return false;
-		}
 
-		var script = event.script,
-			selector = event.selector,
-			args = event.args;
+		var script = event.script;
+		var selector = event.selector;
+		var args = event.args;
 
-		if ( typeof script === 'undefined' || typeof selector === 'undefined' ) {
+		if ( typeof script === 'undefined' || typeof selector === 'undefined' )
 			return false;
-		}
 
 		rl_view_image = function( script, url ) {
 			$.event.trigger( {
@@ -209,9 +205,6 @@
 		// WooCommerce 3.0+ compatibility
 		setTimeout( function() {
 			var flex = $( '.flex-viewport' );
-
-			// if ( flex.length )
-				// flex.css( 'cursor', 'pointer' );
 
 			if ( args.woocommerce_gallery === '1' ) {
 				var gallery = $( '.woocommerce-product-gallery' );
@@ -235,10 +228,10 @@
 		// init lightbox
 		switch ( script ) {
 			case 'swipebox':
-				var slide = $( '#swipebox-overlay' ).find( '.slide.current' ),
-					image_source = '',
-					allow_hide = false,
-					close_executed = false;
+				var slide = $( '#swipebox-overlay' ).find( '.slide.current' );
+				var image_source = '';
+				var allow_hide = false;
+				var close_executed = false;
 
 				$( 'a[rel*="' + selector + '"], a[data-rel*="' + selector + '"]' ).swipebox( {
 					useCSS: ( args.animation === '1' ? true : false ),
@@ -335,15 +328,15 @@
 
 				// additional event to prevent rl_hide_image to execure while opening modal
 				$( window ).on( 'resize', function() {
-					if ( !close_executed ) {
+					if ( ! close_executed ) {
 						allow_hide = true;
 					}
 				} );
 				break;
 
 			case 'prettyphoto':
-				var view_disabled = false,
-					last_image = '';
+				var view_disabled = false;
+				var last_image = '';
 
 				$( 'a[rel*="' + selector + '"], a[data-rel*="' + selector + '"]' ).each( function() {
 					var el = $( this );
@@ -467,16 +460,14 @@
 					if ( typeof attr !== 'undefined' && attr !== false ) {
 						var match = attr.match( new RegExp( selector + '\\-(gallery\\-(?:[\\da-z]{1,4}))', 'ig' ) );
 
-						if ( match !== null ) {
+						if ( match !== null )
 							$( this ).attr( 'data-lightbox-gallery', match[0] );
-						}
 					}
-
 				} );
 
-				var observer_initialized = false,
-					change_allowed = true,
-					last_image = '';
+				var observer_initialized = false;
+				var change_allowed = true;
+				var last_image = '';
 
 				$( 'a[rel*="' + selector + '"], a[data-rel*="' + selector + '"]' ).nivoLightbox( {
 					effect: args.effect,
@@ -534,8 +525,8 @@
 				break;
 
 			case 'imagelightbox':
-				var selectors = [ ],
-					last_image = '';
+				var selectors = [];
+				var last_image = '';
 
 				$( 'a[rel*="' + selector + '"], a[data-rel*="' + selector + '"]' ).each( function( i, item ) {
 					var attr = $( item ).attr( 'data-rel' );
@@ -554,7 +545,7 @@
 
 				if ( selectors.length > 0 ) {
 					// make unique
-					selectors = $.uniqueSort( selectors );
+					selectors = _.uniq( selectors );
 
 					$( selectors ).each( function( i, item ) {
 						if ( typeof event.pagination_type !== 'undefined' ) {
@@ -586,8 +577,8 @@
 				break;
 
 			case 'tosrus':
-				var selectors = [ ],
-					last_image = '';
+				var selectors = [];
+				var last_image = '';
 
 				$( 'a[rel*="' + selector + '"], a[data-rel*="' + selector + '"]' ).each( function( i, item ) {
 					var attr = $( item ).attr( 'data-rel' );
@@ -606,7 +597,7 @@
 
 				if ( selectors.length > 0 ) {
 					// make unique
-					selectors = $.uniqueSort( selectors );
+					selectors = _.uniq( selectors );
 
 					$( selectors ).each( function( i, item ) {
 						if ( typeof event.pagination_type !== 'undefined' ) {
@@ -663,8 +654,8 @@
 				break;
 
 			case 'featherlight':
-				var selectors = [ ],
-					last_image = '';
+				var selectors = [];
+				var last_image = '';
 
 				$( 'a[rel*="' + selector + '"], a[data-rel*="' + selector + '"]' ).each( function( i, item ) {
 					var attr = $( item ).attr( 'data-rel' );
@@ -683,7 +674,7 @@
 
 				if ( selectors.length > 0 ) {
 					// make unique
-					selectors = $.uniqueSort( selectors );
+					selectors = _.uniq( selectors );
 
 					// set defaults
 					$.extend( $.featherlight.defaults, {
@@ -731,8 +722,8 @@
 				break;
 
 			case 'magnific':
-				var selectors = [ ],
-					last_image = '';
+				var selectors = [];
+				var last_image = '';
 
 				$( 'a[rel*="' + selector + '"], a[data-rel*="' + selector + '"]' ).each( function( i, item ) {
 					var attr = $( item ).attr( 'data-rel' );
@@ -751,23 +742,21 @@
 
 				if ( selectors.length > 0 ) {
 					// make unique
-					selectors = $.uniqueSort( selectors );
+					selectors = _.uniq( selectors );
 
 					$( selectors ).each( function( i, item ) {
-						var subselector = $( 'a[data-rel="' + item + '"], a[rel="' + item + '"]' ),
-							element = $( subselector[0] ),
-							media_type = element.data( 'magnific_type' ),
-							content_type = element.data( 'rl_content' );
+						var subselector = $( 'a[data-rel="' + item + '"], a[rel="' + item + '"]' );
+						var element = $( subselector[0] );
+						var media_type = element.data( 'magnific_type' );
+						var content_type = element.data( 'rl_content' );
 
 						// check content type first
-						if ( typeof content_type !== 'undefined' ) {
+						if ( typeof content_type !== 'undefined' )
 							media_type = content_type;
-						}
 
 						// then media type if needed
-						if ( typeof media_type === 'undefined' ) {
+						if ( typeof media_type === 'undefined' )
 							media_type = 'image';
-						}
 
 						subselector.magnificPopup( {
 							type: media_type === 'gallery' ? 'image' : ( media_type === 'video' ? 'iframe' : media_type ),

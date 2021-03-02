@@ -2,7 +2,7 @@
 /*
 Plugin Name: Responsive Lightbox & Gallery
 Description: Responsive Lightbox & Gallery allows users to create galleries and view larger versions of images, galleries and videos in a lightbox (overlay) effect optimized for mobile devices.
-Version: 2.3.1
+Version: 2.3.2
 Author: dFactory
 Author URI: http://www.dfactory.eu/
 Plugin URI: http://www.dfactory.eu/plugins/responsive-lightbox/
@@ -12,7 +12,7 @@ Text Domain: responsive-lightbox
 Domain Path: /languages
 
 Responsive Lightbox & Gallery
-Copyright (C) 2013-2020, Digital Factory - info@digitalfactory.pl
+Copyright (C) 2013-2021, Digital Factory - info@digitalfactory.pl
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -43,7 +43,7 @@ include_once( RESPONSIVE_LIGHTBOX_PATH . 'includes' . DIRECTORY_SEPARATOR . 'fun
  * Responsive Lightbox class.
  *
  * @class Responsive_Lightbox
- * @version	2.3.1
+ * @version	2.3.2
  */
 class Responsive_Lightbox {
 
@@ -222,41 +222,44 @@ class Responsive_Lightbox {
 			)
 		),
 		'capabilities' => array(
-			'administrator'	=> array(
-				'publish_galleries',
-				'edit_galleries',
-				'edit_published_galleries',
-				'edit_others_galleries',
-				'edit_private_galleries',
-				'delete_galleries',
-				'delete_published_galleries',
-				'delete_others_galleries',
-				'delete_private_galleries',
-				'read_private_galleries',
-				'manage_gallery_categories',
-				'manage_gallery_tags',
-				'edit_lightbox_settings'
-			),
-			'editor' => array(
-				'publish_galleries',
-				'edit_galleries',
-				'edit_published_galleries',
-				'edit_others_galleries',
-				'edit_private_galleries',
-				'delete_galleries',
-				'delete_published_galleries',
-				'delete_others_galleries',
-				'delete_private_galleries',
-				'read_private_galleries',
-				'manage_gallery_categories',
-				'manage_gallery_tags'
-			),
-			'author' => array(
-				'publish_galleries',
-				'edit_galleries',
-				'edit_published_galleries',
-				'delete_galleries',
-				'delete_published_galleries'
+			'active' => false,
+			'roles' => array(
+				'administrator'	=> array(
+					'publish_galleries',
+					'edit_galleries',
+					'edit_published_galleries',
+					'edit_others_galleries',
+					'edit_private_galleries',
+					'delete_galleries',
+					'delete_published_galleries',
+					'delete_others_galleries',
+					'delete_private_galleries',
+					'read_private_galleries',
+					'manage_gallery_categories',
+					'manage_gallery_tags',
+					'edit_lightbox_settings'
+				),
+				'editor' => array(
+					'publish_galleries',
+					'edit_galleries',
+					'edit_published_galleries',
+					'edit_others_galleries',
+					'edit_private_galleries',
+					'delete_galleries',
+					'delete_published_galleries',
+					'delete_others_galleries',
+					'delete_private_galleries',
+					'read_private_galleries',
+					'manage_gallery_categories',
+					'manage_gallery_tags'
+				),
+				'author' => array(
+					'publish_galleries',
+					'edit_galleries',
+					'edit_published_galleries',
+					'delete_galleries',
+					'delete_published_galleries'
+				)
 			)
 		),
 		'basicgrid_gallery'	=> array(
@@ -302,7 +305,7 @@ class Responsive_Lightbox {
 			'origin_left'		=> true,
 			'origin_top'		=> true
 		),
-		'version' => '2.3.1',
+		'version' => '2.3.2',
 		'activation_date' => ''
 	);
 	public $options = array();
@@ -357,9 +360,15 @@ class Responsive_Lightbox {
 			}
 		}
 
+		$capabilities = get_option( 'responsive_lightbox_capabilities' );
+
+		if ( empty( $capabilities ) )
+			$capabilities = array();
+
 		$this->options['settings'] = array_merge( $this->defaults['settings'], ( ( $array = get_option( 'responsive_lightbox_settings' ) ) === false ? array() : $array ) );
 		$this->options['folders'] = array_merge( $this->defaults['folders'], ( ( $array = get_option( 'responsive_lightbox_folders' ) ) === false ? array() : $array ) );
 		$this->options['builder'] = array_merge( $this->defaults['builder'], ( ( $array = get_option( 'responsive_lightbox_builder' ) ) === false ? array() : $array ) );
+		$this->options['capabilities'] = array_merge( $this->defaults['capabilities'], $capabilities );
 		$this->options['remote_library'] = array_merge( $this->defaults['remote_library'], ( ( $array = get_option( 'responsive_lightbox_remote_library' ) ) === false ? array() : $array ) );
 
 		// for multi arrays we have to merge them separately
@@ -434,20 +443,21 @@ class Responsive_Lightbox {
 			set_transient( 'rl_activation_redirect', 1, 3600 );
 
 		// grant new capabilities
-		$this->grant_new_capabilities();
+		$this->grant_capabilities();
 
 		// add options if needed
 		add_option( 'responsive_lightbox_settings', $this->defaults['settings'], '', false );
 		add_option( 'responsive_lightbox_configuration', $this->defaults['configuration'], '', false );
 		add_option( 'responsive_lightbox_folders', $this->defaults['folders'], '', false );
 		add_option( 'responsive_lightbox_builder', $this->defaults['builder'], '', false );
+		add_option( 'responsive_lightbox_capabilities', $this->defaults['capabilities'], '', false );
 		add_option( 'responsive_lightbox_remote_library', $this->defaults['remote_library'], '', false );
 		add_option( 'responsive_lightbox_version', $this->defaults['version'], '', false );
 
 		// permalinks
 		flush_rewrite_rules();
 	}
-	
+
 	/**
 	 * Single site deactivation function.
 	 *
@@ -455,17 +465,6 @@ class Responsive_Lightbox {
 	 * @return void
 	 */
 	public function deactivate_single( $multi = false ) {
-		global $wp_roles;
-
-		// remove all capabilities
-		foreach ( $wp_roles->roles as $role_name => $label ) {
-			$role = $wp_roles->get_role( $role_name );
-
-			foreach ( $this->capabilities as $capability => $label ) {
-				$role->remove_cap( $capability );
-			}
-		}
-
 		if ( $multi === true ) {
 			$options = get_option( 'responsive_lightbox_settings' );
 			$check = $options['deactivation_delete'];
@@ -474,10 +473,22 @@ class Responsive_Lightbox {
 
 		// delete options if needed
 		if ( $check ) {
+			global $wp_roles;
+
+			// remove all capabilities
+			foreach ( $wp_roles->roles as $role_name => $label ) {
+				$role = $wp_roles->get_role( $role_name );
+
+				foreach ( $this->capabilities as $capability => $label ) {
+					$role->remove_cap( $capability );
+				}
+			}
+
 			delete_option( 'responsive_lightbox_settings' );
 			delete_option( 'responsive_lightbox_configuration' );
 			delete_option( 'responsive_lightbox_folders' );
 			delete_option( 'responsive_lightbox_builder' );
+			delete_option( 'responsive_lightbox_capabilities' );
 			delete_option( 'responsive_lightbox_remote_library' );
 			delete_option( 'responsive_lightbox_version' );
 		}
@@ -560,7 +571,7 @@ class Responsive_Lightbox {
 					// 2.3.1
 					if ( version_compare( $this->version, '2.3.1', '<' ) ) {
 						// grant new capabilities just before the version update
-						$this->grant_new_capabilities();
+						$this->grant_capabilities();
 					}
 				}
 			}
@@ -572,7 +583,11 @@ class Responsive_Lightbox {
 	 *
 	 * @return void
 	 */
-	public function grant_new_capabilities() {
+	public function grant_capabilities() {
+		// no capabilities?
+		if ( ! $this->options['capabilities']['active'] )
+			return;
+
 		global $wp_roles;
 
 		$user = wp_get_current_user();
@@ -594,22 +609,25 @@ class Responsive_Lightbox {
 					$user->add_cap( 'edit_lightbox_settings' );
 			}
 
-			// add new capabilities to the current roles nevertheless
-			foreach ( $this->capabilities as $capability => $label ) {
-				// role and capability exist?
-				if ( array_key_exists( $role_name, $this->defaults['capabilities'] ) && in_array( $capability, $this->defaults['capabilities'][$role_name], true ) ) {
-					$role->add_cap( $capability );
+			// role exists?
+			if ( array_key_exists( $role_name, $this->defaults['capabilities']['roles'] ) ) {
+				// add new capabilities to the current roles nevertheless
+				foreach ( $this->capabilities as $capability => $label ) {
+					// capability exists?
+					if ( in_array( $capability, $this->defaults['capabilities']['roles'][$role_name], true ) ) {
+						$role->add_cap( $capability );
 
-					// force capability on the current user
-					if ( $capability === 'edit_lightbox_settings' && is_a( $user, 'WP_User' ) && ! $user->has_cap( 'edit_lightbox_settings' ) && in_array( $role_name, $user->roles, true ) )
-						$user->add_cap( 'edit_lightbox_settings' );
+						// force capability on the current user
+						if ( $capability === 'edit_lightbox_settings' && is_a( $user, 'WP_User' ) && ! $user->has_cap( 'edit_lightbox_settings' ) && in_array( $role_name, $user->roles, true ) )
+							$user->add_cap( 'edit_lightbox_settings' );
+					}
 				}
 			}
 		}
 	}
 
 	/**
-	 * Early initialization.
+	 * Early plugin initialization.
 	 *
 	 * @return void
 	 */
@@ -627,6 +645,46 @@ class Responsive_Lightbox {
 
 		// only for backend
 		if ( is_admin() ) {
+			$galleries = apply_filters( 'rl_gallery_types', $this->gallery_types );
+
+			$update_settings = false;
+
+			// lightbox scipt does not exist?
+			if ( ! array_key_exists( $this->options['settings']['script'], $this->options['configuration'] ) ) {
+				// set default script
+				$this->options['settings']['script'] = $this->defaults['settings']['script'];
+
+				$update_settings = true;
+			}
+
+			// check default WordPress gallery
+			if ( ! array_key_exists( $this->options['settings']['default_gallery'], $galleries ) ) {
+				// set default gallery
+				$this->options['settings']['default_gallery'] = $this->defaults['settings']['default_gallery'];
+
+				$update_settings = true;
+			}
+
+			// check default builder gallery
+			if ( ! array_key_exists( $this->options['settings']['builder_gallery'], $galleries ) ) {
+				// set default gallery
+				$this->options['settings']['builder_gallery'] = $this->defaults['settings']['builder_gallery'];
+
+				$update_settings = true;
+			}
+
+			// check default WooCommerce gallery
+			if ( ! array_key_exists( $this->options['settings']['default_woocommerce_gallery'], $galleries ) ) {
+				// set default gallery
+				$this->options['settings']['default_woocommerce_gallery'] = $this->defaults['settings']['default_woocommerce_gallery'];
+
+				$update_settings = true;
+			}
+
+			// update settings
+			if ( $update_settings )
+				update_option( 'responsive_lightbox_settings', $this->options['settings'], false );
+
 			// set capabilities with labels
 			$this->capabilities = array(
 				'publish_galleries'				=> __( 'Publish Galleries', 'responsive-lightbox' ),
@@ -647,7 +705,7 @@ class Responsive_Lightbox {
 			// 2.3.0 update
 			if ( version_compare( $this->version, '2.3.0', '<' ) ) {
 				// grant new capabilities just before the version update
-				$this->grant_new_capabilities();
+				$this->grant_capabilities();
 			}
 
 			// plugin version update
@@ -1001,150 +1059,154 @@ class Responsive_Lightbox {
 		if ( $this->options['builder']['categories'] ) {
 			$taxonomies[] = 'rl_category';
 
-			register_taxonomy(
-				'rl_category',
-				'rl_gallery',
-				array(
-					'public'				=> true,
-					'hierarchical'			=> true,
-					'labels'				=> array(
-						'name'				=> _x( 'Gallery Categories', 'taxonomy general name', 'responsive-lightbox' ),
-						'singular_name'		=> _x( 'Gallery Category', 'taxonomy singular name', 'responsive-lightbox' ),
-						'search_items'		=> __( 'Search Gallery Categories', 'responsive-lightbox' ),
-						'all_items'			=> __( 'All Gallery Categories', 'responsive-lightbox' ),
-						'parent_item'		=> __( 'Parent Gallery Category', 'responsive-lightbox' ),
-						'parent_item_colon'	=> __( 'Parent Gallery Category:', 'responsive-lightbox' ),
-						'edit_item'			=> __( 'Edit Gallery Category', 'responsive-lightbox' ),
-						'view_item'			=> __( 'View Gallery Category', 'responsive-lightbox' ),
-						'update_item'		=> __( 'Update Gallery Category', 'responsive-lightbox' ),
-						'add_new_item'		=> __( 'Add New Gallery Category', 'responsive-lightbox' ),
-						'new_item_name'		=> __( 'New Gallery Category Name', 'responsive-lightbox' ),
-						'menu_name'			=> __( 'Categories', 'responsive-lightbox' )
-					),
-					'show_ui'				=> true,
-					'show_admin_column'		=> true,
-					'update_count_callback'	=> '_update_post_term_count',
-					'query_var'				=> true,
-					'rewrite'				=> array(
-						'slug'			=> $this->options['builder']['permalink_categories'],
-						'with_front'	=> false,
-						'hierarchical'	=> false
-					),
-					'capabilities'			=> array(
-						'manage_terms'	=> 'manage_gallery_categories',
-						'edit_terms'	=> 'manage_gallery_categories',
-						'delete_terms'	=> 'manage_gallery_categories',
-						'assign_terms'	=> 'edit_galleries'
-					)
+			$data = array(
+				'public'				=> true,
+				'hierarchical'			=> true,
+				'labels'				=> array(
+					'name'				=> _x( 'Gallery Categories', 'taxonomy general name', 'responsive-lightbox' ),
+					'singular_name'		=> _x( 'Gallery Category', 'taxonomy singular name', 'responsive-lightbox' ),
+					'search_items'		=> __( 'Search Gallery Categories', 'responsive-lightbox' ),
+					'all_items'			=> __( 'All Gallery Categories', 'responsive-lightbox' ),
+					'parent_item'		=> __( 'Parent Gallery Category', 'responsive-lightbox' ),
+					'parent_item_colon'	=> __( 'Parent Gallery Category:', 'responsive-lightbox' ),
+					'edit_item'			=> __( 'Edit Gallery Category', 'responsive-lightbox' ),
+					'view_item'			=> __( 'View Gallery Category', 'responsive-lightbox' ),
+					'update_item'		=> __( 'Update Gallery Category', 'responsive-lightbox' ),
+					'add_new_item'		=> __( 'Add New Gallery Category', 'responsive-lightbox' ),
+					'new_item_name'		=> __( 'New Gallery Category Name', 'responsive-lightbox' ),
+					'menu_name'			=> __( 'Categories', 'responsive-lightbox' )
+				),
+				'show_ui'				=> true,
+				'show_admin_column'		=> true,
+				'update_count_callback'	=> '_update_post_term_count',
+				'query_var'				=> true,
+				'rewrite'				=> array(
+					'slug'			=> $this->options['builder']['permalink_categories'],
+					'with_front'	=> false,
+					'hierarchical'	=> false
 				)
 			);
+
+			if ( $this->options['capabilities']['active'] ) {
+				$data['capabilities'] = array(
+					'manage_terms'	=> 'manage_gallery_categories',
+					'edit_terms'	=> 'manage_gallery_categories',
+					'delete_terms'	=> 'manage_gallery_categories',
+					'assign_terms'	=> 'edit_galleries'
+				);
+			}
+
+			register_taxonomy( 'rl_category', 'rl_gallery', $data );
 		}
 
 		if ( $this->options['builder']['tags'] ) {
 			$taxonomies[] = 'rl_tag';
 
-			register_taxonomy(
-				'rl_tag',
-				'rl_gallery',
-				array(
-					'public'				=> true,
-					'hierarchical'			=> false,
-					'labels'				=> array(
-						'name'							=> _x( 'Gallery Tags', 'taxonomy general name', 'responsive-lightbox' ),
-						'singular_name'					=> _x( 'Gallery Tag', 'taxonomy singular name', 'responsive-lightbox' ),
-						'search_items'					=> __( 'Search Gallery Tags', 'responsive-lightbox' ),
-						'popular_items'					=> __( 'Popular Gallery Tags', 'responsive-lightbox' ),
-						'all_items'						=> __( 'All Gallery Tags', 'responsive-lightbox' ),
-						'parent_item'					=> null,
-						'parent_item_colon'				=> null,
-						'edit_item'						=> __( 'Edit Gallery Tag', 'responsive-lightbox' ),
-						'update_item'					=> __( 'Update Gallery Tag', 'responsive-lightbox' ),
-						'add_new_item'					=> __( 'Add New Gallery Tag', 'responsive-lightbox' ),
-						'new_item_name'					=> __( 'New Gallery Tag Name', 'responsive-lightbox' ),
-						'separate_items_with_commas'	=> __( 'Separate gallery tags with commas', 'responsive-lightbox' ),
-						'add_or_remove_items'			=> __( 'Add or remove gallery tags', 'responsive-lightbox' ),
-						'choose_from_most_used'			=> __( 'Choose from the most used gallery tags', 'responsive-lightbox' ),
-						'menu_name'						=> __( 'Tags', 'responsive-lightbox' )
-					),
-					'show_ui'				=> true,
-					'show_admin_column'		=> true,
-					'update_count_callback'	=> '_update_post_term_count',
-					'query_var'				=> true,
-					'rewrite'				=> array(
-						'slug'			=> $this->options['builder']['permalink_tags'],
-						'with_front'	=> false,
-						'hierarchical'	=> false
-					),
-					'capabilities'			=> array(
-						'manage_terms'	=> 'manage_gallery_tags',
-						'edit_terms'	=> 'manage_gallery_tags',
-						'delete_terms'	=> 'manage_gallery_tags',
-						'assign_terms'	=> 'edit_galleries'
-					)
+			$data = array(
+				'public'				=> true,
+				'hierarchical'			=> false,
+				'labels'				=> array(
+					'name'							=> _x( 'Gallery Tags', 'taxonomy general name', 'responsive-lightbox' ),
+					'singular_name'					=> _x( 'Gallery Tag', 'taxonomy singular name', 'responsive-lightbox' ),
+					'search_items'					=> __( 'Search Gallery Tags', 'responsive-lightbox' ),
+					'popular_items'					=> __( 'Popular Gallery Tags', 'responsive-lightbox' ),
+					'all_items'						=> __( 'All Gallery Tags', 'responsive-lightbox' ),
+					'parent_item'					=> null,
+					'parent_item_colon'				=> null,
+					'edit_item'						=> __( 'Edit Gallery Tag', 'responsive-lightbox' ),
+					'update_item'					=> __( 'Update Gallery Tag', 'responsive-lightbox' ),
+					'add_new_item'					=> __( 'Add New Gallery Tag', 'responsive-lightbox' ),
+					'new_item_name'					=> __( 'New Gallery Tag Name', 'responsive-lightbox' ),
+					'separate_items_with_commas'	=> __( 'Separate gallery tags with commas', 'responsive-lightbox' ),
+					'add_or_remove_items'			=> __( 'Add or remove gallery tags', 'responsive-lightbox' ),
+					'choose_from_most_used'			=> __( 'Choose from the most used gallery tags', 'responsive-lightbox' ),
+					'menu_name'						=> __( 'Tags', 'responsive-lightbox' )
+				),
+				'show_ui'				=> true,
+				'show_admin_column'		=> true,
+				'update_count_callback'	=> '_update_post_term_count',
+				'query_var'				=> true,
+				'rewrite'				=> array(
+					'slug'			=> $this->options['builder']['permalink_tags'],
+					'with_front'	=> false,
+					'hierarchical'	=> false
 				)
+			);
+
+			if ( $this->options['capabilities']['active'] ) {
+				$data['capabilities'] = array(
+					'manage_terms'	=> 'manage_gallery_tags',
+					'edit_terms'	=> 'manage_gallery_tags',
+					'delete_terms'	=> 'manage_gallery_tags',
+					'assign_terms'	=> 'edit_galleries'
+				);
+			}
+
+			register_taxonomy( 'rl_tag', 'rl_gallery', $data );
+		}
+
+		$data = array(
+			'labels'				=> array(
+				'name'					=> _x( 'Galleries', 'post type general name', 'responsive-lightbox' ),
+				'singular_name'			=> _x( 'Gallery', 'post type singular name', 'responsive-lightbox' ),
+				'add_new'				=> __( 'Add New', 'responsive-lightbox' ),
+				'add_new_item'			=> __( 'Add New Gallery', 'responsive-lightbox' ),
+				'edit_item'				=> __( 'Edit Gallery', 'responsive-lightbox' ),
+				'new_item'				=> __( 'New Gallery', 'responsive-lightbox' ),
+				'view_item'				=> __( 'View Gallery', 'responsive-lightbox' ),
+				'view_items'			=> __( 'View Galleries', 'responsive-lightbox' ),
+				'search_items'			=> __( 'Search Galleries', 'responsive-lightbox' ),
+				'not_found'				=> __( 'No galleries found', 'responsive-lightbox' ),
+				'not_found_in_trash'	=> __( 'No galleries found in trash', 'responsive-lightbox' ),
+				'all_items'				=> __( 'All Galleries', 'responsive-lightbox' ),
+				'menu_name'				=> __( 'Gallery', 'responsive-lightbox' )
+			),
+			'description'			=> '',
+			'public'				=> true,
+			'exclude_from_search'	=> false,
+			'publicly_queryable'	=> true,
+			'show_ui'				=> true,
+			'show_in_menu'			=> true,
+			'show_in_admin_bar'		=> true,
+			'show_in_nav_menus'		=> true,
+			'menu_position'			=> 57,
+			'menu_icon'				=> 'dashicons-format-gallery',
+			'map_meta_cap'			=> true,
+			'hierarchical'			=> false,
+			'supports'				=> array( 'title', 'author', 'thumbnail' ),
+			'has_archive'			=> $this->options['builder']['archives'],
+			'query_var'				=> true,
+			'can_export'			=> true,
+			'taxonomies'			=> $taxonomies,
+			'rewrite'				=> array(
+				'slug'			=> $this->options['builder']['permalink'],
+				'with_front'	=> false,
+				'feed'			=> true,
+				'pages'			=> true
+			)
+		);
+
+		if ( $this->options['capabilities']['active'] ) {
+			$data['capability_type'] = array( 'gallery', 'galleries' );
+			$data['capabilities'] = array(
+				'publish_posts'				=> 'publish_galleries',
+				'edit_posts'				=> 'edit_galleries',
+				'edit_published_posts'		=> 'edit_published_galleries',
+				'edit_others_posts'			=> 'edit_others_galleries',
+				'edit_private_posts'		=> 'edit_private_galleries',
+				'delete_posts'				=> 'delete_galleries',
+				'delete_published_posts'	=> 'delete_published_galleries',
+				'delete_others_posts'		=> 'delete_others_galleries',
+				'delete_private_posts'		=> 'delete_private_galleries',
+				'read_private_posts'		=> 'read_private_galleries',
+				'edit_post'					=> 'edit_gallery',
+				'delete_post'				=> 'delete_gallery',
+				'read_post'					=> 'read_gallery'
 			);
 		}
 
 		// register rl_gallery
-		register_post_type(
-			'rl_gallery',
-			array(
-				'labels'				=> array(
-					'name'					=> _x( 'Galleries', 'post type general name', 'responsive-lightbox' ),
-					'singular_name'			=> _x( 'Gallery', 'post type singular name', 'responsive-lightbox' ),
-					'add_new'				=> __( 'Add New', 'responsive-lightbox' ),
-					'add_new_item'			=> __( 'Add New Gallery', 'responsive-lightbox' ),
-					'edit_item'				=> __( 'Edit Gallery', 'responsive-lightbox' ),
-					'new_item'				=> __( 'New Gallery', 'responsive-lightbox' ),
-					'view_item'				=> __( 'View Gallery', 'responsive-lightbox' ),
-					'view_items'			=> __( 'View Galleries', 'responsive-lightbox' ),
-					'search_items'			=> __( 'Search Galleries', 'responsive-lightbox' ),
-					'not_found'				=> __( 'No galleries found', 'responsive-lightbox' ),
-					'not_found_in_trash'	=> __( 'No galleries found in trash', 'responsive-lightbox' ),
-					'all_items'				=> __( 'All Galleries', 'responsive-lightbox' ),
-					'menu_name'				=> __( 'Gallery', 'responsive-lightbox' )
-				),
-				'description'			=> '',
-				'public'				=> true,
-				'exclude_from_search'	=> false,
-				'publicly_queryable'	=> true,
-				'show_ui'				=> true,
-				'show_in_menu'			=> true,
-				'show_in_admin_bar'		=> true,
-				'show_in_nav_menus'		=> true,
-				'menu_position'			=> 57,
-				'menu_icon'				=> 'dashicons-format-gallery',
-				'capability_type'		=> array( 'gallery', 'galleries' ),
-				'capabilities'			=> array(
-					'publish_posts'				=> 'publish_galleries',
-					'edit_posts'				=> 'edit_galleries',
-					'edit_published_posts'		=> 'edit_published_galleries',
-					'edit_others_posts'			=> 'edit_others_galleries',
-					'edit_private_posts'		=> 'edit_private_galleries',
-					'delete_posts'				=> 'delete_galleries',
-					'delete_published_posts'	=> 'delete_published_galleries',
-					'delete_others_posts'		=> 'delete_others_galleries',
-					'delete_private_posts'		=> 'delete_private_galleries',
-					'read_private_posts'		=> 'read_private_galleries',
-					'edit_post'					=> 'edit_gallery',
-					'delete_post'				=> 'delete_gallery',
-					'read_post'					=> 'read_gallery'
-				),
-				'map_meta_cap'			=> true,
-				'hierarchical'			=> false,
-				'supports'				=> array( 'title', 'author', 'thumbnail' ),
-				'has_archive'			=> $this->options['builder']['archives'],
-				'query_var'				=> true,
-				'can_export'			=> true,
-				'taxonomies'			=> $taxonomies,
-				'rewrite'				=> array(
-					'slug'			=> $this->options['builder']['permalink'],
-					'with_front'	=> false,
-					'feed'			=> true,
-					'pages'			=> true
-				)
-			)
-		);
+		register_post_type( 'rl_gallery', $data );
 
 		if ( $this->options['builder']['archives'] && $this->options['builder']['archives_category'] !== 'all' && ! is_admin() )
 			add_action( 'pre_get_posts', array( $this, 'gallery_archives' ) );
@@ -1181,20 +1243,26 @@ class Responsive_Lightbox {
 					'name'	=> $settings->tabs[$tab_key]['name']
 				);
 
-				$breadcrumbs[] = array(
-					'url'	=> '',
-					'name'	=> $settings->scripts[$section_key]['name']
-				);
+				// valid lightbox script?
+				if ( array_key_exists( $section_key, $settings->scripts ) ) {
+					$breadcrumbs[] = array(
+						'url'	=> '',
+						'name'	=> $settings->scripts[$section_key]['name']
+					);
+				}
 			} elseif ( $tab_key === 'gallery' ) {
 				$breadcrumbs[] = array(
 					'url'	=> admin_url( 'admin.php?page=responsive-lightbox-gallery' ),
 					'name'	=> $settings->tabs[$tab_key]['name']
 				);
 
-				$breadcrumbs[] = array(
-					'url'	=> '',
-					'name'	=> $settings->tabs['gallery']['sections'][$section_key]
-				);
+				// valid gallery?
+				if ( array_key_exists( $section_key, $settings->tabs['gallery']['sections'] ) ) {
+					$breadcrumbs[] = array(
+						'url'	=> '',
+						'name'	=> $settings->tabs['gallery']['sections'][$section_key]
+					);
+				}
 			} else {
 				$breadcrumbs[] = array(
 					'url'	=> '',
@@ -1615,9 +1683,6 @@ class Responsive_Lightbox {
 	public function gutenberg_enqueue_scripts() {
 		$rl = Responsive_Lightbox();
 
-		// enqueue gallery
-		$rl->galleries->enqueue_gallery_scripts_styles();
-
 		// enqueue script
 		wp_enqueue_script( 'responsive-lightbox-block-editor-script', RESPONSIVE_LIGHTBOX_URL . '/js/gutenberg.min.js', array( 'wp-blocks', 'wp-i18n', 'wp-element', 'wp-editor', 'wp-components' ), $rl->defaults['version'] );
 
@@ -1631,6 +1696,9 @@ class Responsive_Lightbox {
 				'active' => true
 			)
 		);
+
+		// enqueue gallery
+		$rl->galleries->enqueue_gallery_scripts_styles();
 
 		// register gallery block
 		register_block_type(
@@ -1983,7 +2051,7 @@ class Responsive_Lightbox {
 			wp_register_script( 'responsive-lightbox-images-loaded', RESPONSIVE_LIGHTBOX_URL . '/assets/imagesloaded/imagesloaded.pkgd' . ( ! ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '.min' : '' ) . '.js', array( 'jquery' ) );
 			wp_register_script( 'responsive-lightbox-masonry', RESPONSIVE_LIGHTBOX_URL . '/assets/masonry/masonry.pkgd' . ( ! ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '.min' : '' ) . '.js', array( 'jquery' ), Responsive_Lightbox()->defaults['version'], ( Responsive_Lightbox()->options['settings']['loading_place'] === 'footer' ) );
 
-			wp_register_script( 'responsive-lightbox', plugins_url( 'js/front.js', __FILE__ ), array( 'jquery', 'responsive-lightbox-infinite-scroll' ), $this->defaults['version'], ( $this->options['settings']['loading_place'] === 'header' ? false : true ) );
+			wp_register_script( 'responsive-lightbox', plugins_url( 'js/front.js', __FILE__ ), array( 'jquery', 'underscore', 'responsive-lightbox-infinite-scroll' ), $this->defaults['version'], ( $this->options['settings']['loading_place'] === 'header' ? false : true ) );
 
 			$args['woocommerce_gallery'] = 0;
 

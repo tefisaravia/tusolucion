@@ -184,7 +184,7 @@
 						}
 					}
 
-					rl_gallery_ids[gallery_id].val( $.uniqueSort( copy ).join( ',' ) );
+					rl_gallery_ids[gallery_id].val( _.uniq( copy ).join( ',' ) );
 				} );
 
 				// finally, open the modal.

@@ -203,7 +203,7 @@ class Responsive_Lightbox_Tour {
 			} elseif ( $_GET['page'] === 'responsive-lightbox-capabilities' ) {
 				$pointer = array(
 					'content'	 => '<h3>' . __( 'Capabilities Settings', 'responsive-lightbox' ) . '</h3>' .
-					'<p>' . __( "Capabilities give you the ability to control what users can and cannot do within the plugin. By default only the Administrator role allows a user to perform all possible capabilities. But you can fine tune these settings to match your specific requirements.", 'responsive-lightbox' ) . '</p>',
+					'<p>' . __( 'Capabilities give you the ability to control what users can and cannot do within the plugin. By default only the Administrator role allows a user to perform all possible capabilities. But you can fine tune these settings to match your specific requirements.', 'responsive-lightbox' ) . '</p>',
 					'button2'	 => __( 'Next', 'responsive-lightbox' ),
 					'id'		 => '#wpbody-content .wrap .nav-tab-active',
 					'function'	 => 'window.location="' . admin_url( 'admin.php?page=responsive-lightbox-remote_library' ) . '";'

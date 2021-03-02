@@ -68,6 +68,9 @@ class Genesis_Featured_Page_Advanced extends WP_Widget {
 
 		// Enqueue Admin scripts and styles
 		add_action( 'admin_enqueue_scripts', array( $this, 'fpa_admin_scripts_enqueue' ) );
+
+		// Enqueue admin scripts on the Frontend (required due to Beaver Builder conflict)
+		add_action( 'wp_enqueue_scripts', array( $this, 'fpa_admin_scripts_enqueue' ) );
 	}
 
 
@@ -584,9 +587,16 @@ class Genesis_Featured_Page_Advanced extends WP_Widget {
 	 */
 	function fpa_admin_scripts_enqueue( $hook ) {
 
+		$is_beaver_builder_active = false;
+
+		if ( class_exists( 'FLBuilderModel' ) ) {
+			$is_beaver_builder_active = FLBuilderModel::is_builder_active();
+		}
+
 		// Do no enqueue scripts & styles if we are not on either the Widget or Customizer pages
 		// Updated in version 1.9.3 to address conflict with Page Builder by SiteOrigin plugin
-		if ( 'widgets.php' == $hook || 'customize.php' == $hook || defined( 'SITEORIGIN_PANELS_VERSION' ) ) {
+		// Updated in version 1.9.8 to address conflict with Beaver Builder
+		if ( 'widgets.php' == $hook || 'customize.php' == $hook || defined( 'SITEORIGIN_PANELS_VERSION' ) || $is_beaver_builder_active ) {
 
 			// Enqueues all media scripts so we can use the media uploader
 			wp_enqueue_media();

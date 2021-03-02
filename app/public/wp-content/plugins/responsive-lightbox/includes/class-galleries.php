@@ -858,15 +858,23 @@ class Responsive_Lightbox_Galleries {
 				// set new gallery type
 				$gallery_type = $rl->options['settings']['builder_gallery'];
 
-				// assign gallery settings and defaults
-				$gallery_fields = $rl->settings->settings[$gallery_type . '_gallery']['fields'];
-				$gallery_defaults = $rl->options[$gallery_type . '_gallery'];
+				// assign gallery settings
+				if ( array_key_exists( $gallery_type . '_gallery', $rl->settings->settings ) )
+					$gallery_fields = $rl->settings->settings[$gallery_type . '_gallery']['fields'];
+
+				// assign gallery defaults
+				if ( array_key_exists( $gallery_type . '_gallery', $rl->options ) )
+					$gallery_defaults = $rl->options[$gallery_type . '_gallery'];
 			} else {
 				$gallery_type = $config['menu_item'];
 
-				// assign gallery settings and defaults
-				$gallery_fields = $rl->settings->settings[$config['menu_item'] . '_gallery']['fields'];
-				$gallery_defaults = $rl->defaults[$config['menu_item'] . '_gallery'];
+				// assign gallery settings
+				if ( array_key_exists( $config['menu_item'] . '_gallery', $rl->settings->settings ) )
+					$gallery_fields = $rl->settings->settings[$config['menu_item'] . '_gallery']['fields'];
+
+				// assign gallery defaults
+				if ( array_key_exists( $config['menu_item'] . '_gallery', $rl->defaults ) )
+					$gallery_defaults = $rl->defaults[$config['menu_item'] . '_gallery'];
 			}
 
 			if ( isset( $gallery_fields, $gallery_defaults ) ) {

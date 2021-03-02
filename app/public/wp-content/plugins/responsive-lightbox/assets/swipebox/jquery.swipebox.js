@@ -1,8 +1,10 @@
-/*! Swipebox v1.4.4 | Constantin Saguin csag.co | MIT License | github.com/brutaldesign/swipebox */
+/*! Swipebox v1.5.2 | Constantin Saguin csag.co | MIT License | github.com/brutaldesign/swipebox */
 
 ;( function ( window, document, $, undefined ) {
 
 	$.swipebox = function( elem, options ) {
+
+		$( elem ).addClass( 'swipebox' ); // fugly but yea, swipebox class all the things
 
 		// Default options
 		var ui,
@@ -24,13 +26,13 @@
 				loopAtEnd: false,
 				autoplayVideos: false,
 				queryStringData: {},
-				toggleClassOnLoad: '',
-				selector: null
+				toggleClassOnLoad: ''
 			},
 
 			plugin = this,
 			elements = [], // slides array [ { href:'...', title:'...' }, ...],
 			$elem,
+			selector = '.swipebox',
 			isMobile = navigator.userAgent.match( /(iPad)|(iPhone)|(iPod)|(Android)|(PlayBook)|(BB10)|(BlackBerry)|(Opera Mini)|(IEMobile)|(webOS)|(MeeGo)/i ),
 			isTouch = isMobile !== null || document.createTouch !== undefined || ( 'ontouchstart' in window ) || ( 'onmsgesturechange' in window ) || navigator.msMaxTouchPoints,
 			supportSVG = !! document.createElementNS && !! document.createElementNS( 'http://www.w3.org/2000/svg', 'svg').createSVGRect,
@@ -76,7 +78,7 @@
 
 			} else {
 
-				$( elem ).on( 'click', plugin.settings.selector, function( event ) {
+				$( document ).on( 'click', selector, function( event ) {
 
 					// console.log( isTouch );
 
@@ -85,12 +87,10 @@
 						return false;
 					}
 
-                    ui.destroy();
-
-					if ( plugin.settings.selector === null ) {
-                        $elem = $( elem );
-                    } else {
-                        $elem = $( elem ).find( plugin.settings.selector );
+                    if ( ! Array.isArray( elem ) ) {
+						ui.destroy();
+						$elem = $( selector );
+						ui.actions();
 					}
 
 					elements = [];
@@ -108,7 +108,9 @@
 					}
 
 					if ( relVal && relVal !== '' && relVal !== 'nofollow' ) {
-						$elem = $elem.filter( '[' + relType + '="' + relVal + '"]' );
+						$elem = $( selector ).filter( '[' + relType + '="' + relVal + '"]' );
+					} else {
+						$elem = $( selector );
 					}
 
 					$elem.each( function() {
@@ -119,7 +121,6 @@
 						if ( $( this ).attr( 'title' ) ) {
 							title = $( this ).attr( 'title' );
 						}
-
 
 						if ( $( this ).attr( 'href' ) ) {
 							href = $( this ).attr( 'href' );
@@ -357,7 +358,7 @@
 									} );
 								}
 
-							// swipe rught
+							// swipe right
 							} else if ( 0 > hDistance ) {
 
 								// last Slide
@@ -584,7 +585,9 @@
 					} );
 				}
 
-				$( '#swipebox-close' ).on( action, function() {
+				$( '#swipebox-close' ).on( action, function( event ) {
+					event.preventDefault();
+					event.stopPropagation();
 					$this.closeSlide();
 				} );
 			},
@@ -781,15 +784,17 @@
 					youtubeShortUrl = url.match(/(?:www\.)?youtu\.be\/([a-zA-Z0-9\-_]+)/),
 					vimeoUrl = url.match( /(?:www\.)?vimeo\.com\/([0-9]*)/ ),
 					qs = '';
+
 				if ( youtubeUrl || youtubeShortUrl) {
 					if ( youtubeShortUrl ) {
 						youtubeUrl = youtubeShortUrl;
 					}
+
 					qs = ui.parseUri( url, {
 						'autoplay' : ( plugin.settings.autoplayVideos ? '1' : '0' ),
 						'v' : ''
 					});
-					iframe = '<iframe width="560" height="315" src="//' + youtubeUrl[1] + '/embed/' + youtubeUrl[2] + '?' + qs + '" frameborder="0" allowfullscreen></iframe>';
+					iframe = '<iframe width="560" height="315" src="https://' + youtubeUrl[1] + '/embed/' + youtubeUrl[2] + '?' + qs + '" frameborder="0" allowfullscreen></iframe>';
 
 				} else if ( vimeoUrl ) {
 					qs = ui.parseUri( url, {
